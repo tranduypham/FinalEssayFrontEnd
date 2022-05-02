@@ -1,3 +1,9 @@
+:root{
+  --shadow: rgba(27, 27, 27, 0.692);
+  --mainColor : #fffcee;
+  --headerBar: #001529;
+  --thumbScroll: #00152959;
+}
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +16,70 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+/* Scroll bar */
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--mainColor);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--thumbScroll);
+  border-radius: 25px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--headerBar);
+}
+
+/* Layout css */
+.logo {
+  float: left;
+  width: 120px;
+  height: 50px;
+  margin: 10px 24px 16px 0;
+  background: var(--headerBar);
+  background-image: url("https://www.logodesignlove.com/wp-content/uploads/2022/01/logo-wave-symbol-01.jpg");
+  background-size: 80px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: screen;
+}
+
+.ant-row-rtl .logo {
+  float: right;
+  margin: 16px 0 16px 24px;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+/* Product List */
+.product__list .ant-card-hoverable {
+  transition: all 0.15s ease-in-out;
+}
+.product__list .ant-card-hoverable:hover {
+  border-color: transparent;
+  transform: scale(1.04);
+}
+.ant-btn.ant-btn-background-ghost {
+  background: transparent;
+  color: var(--headerBar);
+  border-color: var(--headerBar);
+  text-shadow: none;
+  transition: all 0.2s;
+}
+.ant-btn.ant-btn-background-ghost:hover, .ant-btn.ant-btn-background-ghost:active, .ant-btn.ant-btn-background-ghost:focus {
+  background: var(--headerBar);
+  color: #fff;
+  border-color: var(--headerBar);
+  text-shadow: none;
 }
