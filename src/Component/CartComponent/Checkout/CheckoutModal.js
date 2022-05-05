@@ -1,11 +1,11 @@
 import { Card, Divider, Modal, Space, Typography } from "antd";
 
-import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, ShowCartProduct } from "../../../Actions";
+import { useContext } from "react";
+import { ClearCart, GetProductName } from "../../../Actions";
 import { CartContext, CartTotalPriceContext } from "../../../Context";
 import "./CheckoutModal.css"
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     const processCheckout = () => {
@@ -43,7 +43,7 @@ const CheckoutList = ({ list }) => {
         <Card className="order-summary">
             
             <Divider orientation="left" orientationMargin={0}>Order Bill</Divider>
-            <Space style={{ display: "flex", gap: "50px", padding: "0", fontSize: 16 }}>
+            <Space style={{ display: "flex", gap: 50, padding: "0", fontSize: 16 }}>
                 <Text type="default">Total Product</Text>
                 <Text strong type="default">{cartTotal}</Text>
             </Space>
@@ -74,7 +74,7 @@ const CheckoutList = ({ list }) => {
                 </tbody>
             </table>
             <Divider orientation="left" orientationMargin={0}>Total</Divider>
-            <Space style={{ display: "flex", gap: "100px", padding: "0", fontSize: 16 }}>
+            <Space style={{ display: "flex", gap: 100, padding: "0", fontSize: 16 }}>
                 <Text type="default">Total Bill</Text>
                 <Text strong type="default">{totalPrice}</Text>
             </Space>
