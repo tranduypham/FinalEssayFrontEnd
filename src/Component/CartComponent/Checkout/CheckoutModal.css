@@ -3,3 +3,13 @@ table tr th {
     padding: 10px 15px;
     min-width: 20px;
 }
+
+.checkout .ant-modal-header {
+    background-color: var(--headerBar);
+}
+.checkout .ant-modal-header * {
+    color: #fff;
+}
+.checkout .ant-modal-body {
+    padding: 0;
+}

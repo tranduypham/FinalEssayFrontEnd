@@ -1,4 +1,4 @@
-import { Card, Divider, Modal, Space, Typography } from "antd";
+import { Card, Divider, Modal, Typography } from "antd";
 
 import { useContext } from "react";
 import { ClearCart, GetProductName } from "../../../Actions";
@@ -13,7 +13,8 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     }
     return (
         <Modal
-            title="Checkout Summary"
+            className="checkout"
+            title="Your Order"
             visible={visible}
             onOk={() => {
                 ClearCart()
@@ -40,13 +41,13 @@ const CheckoutList = ({ list }) => {
     const [totalPrice, setTotalPrice] = useContext(CartTotalPriceContext);
 
     return (
-        <Card className="order-summary">
+        <Card bordered={false}>
             
             <Divider orientation="left" orientationMargin={0}>Order Bill</Divider>
-            <Space style={{ display: "flex", gap: 50, padding: "0", fontSize: 16 }}>
+            <div style={{ display: "flex", gap: 50, padding: "0", fontSize: 16 }}>
                 <Text type="default">Total Product</Text>
                 <Text strong type="default">{cartTotal}</Text>
-            </Space>
+            </div>
 
             <Divider orientation="left" orientationMargin={0}>Detail</Divider>
             <table style={{ fontSize: 16 }}>
@@ -74,10 +75,10 @@ const CheckoutList = ({ list }) => {
                 </tbody>
             </table>
             <Divider orientation="left" orientationMargin={0}>Total</Divider>
-            <Space style={{ display: "flex", gap: 100, padding: "0", fontSize: 16 }}>
+            <div style={{ display: "flex", gap: 100, padding: "0", fontSize: 16 }}>
                 <Text type="default">Total Bill</Text>
                 <Text strong type="default">{totalPrice}</Text>
-            </Space>
+            </div>
         </Card>
     )
 }
