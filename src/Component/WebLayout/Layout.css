@@ -1,13 +1,12 @@
 
 
 .layout-default {
-    background-image: url("https://media.istockphoto.com/vectors/figure-mandala-for-coloring-doodles-sketch-vector-id1275772075");
-    background-size: cover;
+    background-image: url("./background.jpg");
+    background-size: 850px;
     background-repeat: repeat-x;
     background-position: center;
     background-blend-mode: darken;
     
-    width: 100vw;
     min-height: 100vh;
     background-color: var(--mainColor);
 }
@@ -33,14 +32,14 @@
     position: sticky;
     z-index: 1;
     top: 70px;
-    background-image: url("https://i.pinimg.com/736x/f4/72/49/f472498f44c7734c85f9efa04a192323.jpg");
-    background-size: 100%;
-    background-repeat: no-repeat;
-    background-position: center;
+    background-image: url("./content_background.jpg");
+    background-size: 1350px;
+    background-repeat: repeat;
+    background-position: left top;
     background-blend-mode: darken;
     
     background-color: var(--mainColor);
-    box-shadow: 10px 10px 20px var(--shadow), -10px 10px 20px var(--shadow);
+    box-shadow: 15px 0px 30px var(--shadow), -15px 0px 30px var(--shadow);
     width: 70%;
     margin: 0 auto;
     color: white;

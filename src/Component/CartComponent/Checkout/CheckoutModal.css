@@ -1,0 +1,5 @@
+table tr td,
+table tr th {
+    padding: 10px 15px;
+    min-width: 20px;
+}

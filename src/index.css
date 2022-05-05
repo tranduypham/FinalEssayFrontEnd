@@ -1,5 +1,5 @@
 :root{
-  --shadow: rgba(27, 27, 27, 0.692);
+  --shadow: #434039;
   --mainColor : #fffcee;
   --headerBar: #001529;
   --thumbScroll: #00152959;
@@ -46,7 +46,7 @@ code {
   height: 50px;
   margin: 10px 24px 16px 0;
   background: var(--headerBar);
-  background-image: url("https://www.logodesignlove.com/wp-content/uploads/2022/01/logo-wave-symbol-01.jpg");
+  background-image: url("./Img/Logo/whale.jpg");
   background-size: 80px;
   background-position: center;
   background-repeat: no-repeat;
@@ -82,4 +82,16 @@ code {
   color: #fff;
   border-color: var(--headerBar);
   text-shadow: none;
+}
+.ant-btn-primary {
+  color: #fff;
+  border-color: var(--headerBar);
+  background: var(--headerBar);
+  text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
+}
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+  color: #fff;
+  border-color: #40a9ff;
+  background: #40a9ff;
 }
