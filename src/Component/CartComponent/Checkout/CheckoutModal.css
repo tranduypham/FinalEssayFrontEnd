@@ -13,3 +13,27 @@ table tr th {
 .checkout .ant-modal-body {
     padding: 0;
 }
+
+.verify .ant-modal-header {
+    background-color: #E2A88C;
+}
+.verify .ant-modal-header * {
+    color: #2f231d;
+}
+.verify .ant-modal-body {
+    padding: 0;
+}
+.verify .ant-btn-primary {
+    color: #2f231d;
+    border-color: #E2A88C;
+    background: #E2A88C;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
+    box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
+    transition: all 0.2s;
+}
+.verify .ant-btn-primary:hover ,
+.verify .ant-btn-primary:focus {
+    color: #fff;
+    border-color: var(--headerBar);
+    background: var(--headerBar);
+}

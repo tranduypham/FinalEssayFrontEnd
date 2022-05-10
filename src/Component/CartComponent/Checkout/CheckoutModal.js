@@ -1,36 +1,132 @@
 import { Card, Divider, Modal, Typography } from "antd";
 
-import { useContext } from "react";
-import { ClearCart, GetProductName } from "../../../Actions";
+import { useContext, useEffect, useState } from "react";
+import { ClearCart, DecryptData, GetProductName, totalMoney } from "../../../Actions";
+import { ClientSendMerchantPaymentInfo } from "../../../Axios/Fetch/action";
 import { CartContext, CartTotalPriceContext } from "../../../Context";
 import "./CheckoutModal.css"
+import VerifyModal from "./VerifyModal";
 
 const { Text } = Typography;
 
 const CheckoutModal = ({ visible, hideModal, list, reset }) => {
-    const processCheckout = () => {
+    console.log("reset");
+    // const [invoiceFromMerchant, setInvoiceFromMerchant] = useState(null);
+    const [verifyVisibility, setVerifyVisibility] = useState(false);
+    const [verifyList, setVerifyList] = useState([]);
+    const [paymentInfo, setPaymentInfo] = useState("");
+    const [merchantBankingInfo, setMerchantBankingInfo] = useState("");
 
+
+    // const processCheckout = (paymentInfo) => {
+    //     console.log(paymentInfo);
+    //     ClientSendMerchantPaymentInfo(paymentInfo)
+    //         .then((response) => {
+    //             const {
+    //                 invoice,
+    //                 pi,
+    //                 merchantBankingInfo
+    //             } = response.data;
+    //             // invoice = JSON.stringify(invoice)
+    //             console.warn("Invoice : ", invoice, "Payment Info : ", pi, "Merchant banking info : ", merchantBankingInfo);
+    //             DecryptData("merchant", invoice, true)
+    //                 .then((p) => {
+    //                     VerifyInvoice(JSON.parse(JSON.parse(p)));
+    //                     // if(p != undefined) {
+    //                     // console.log(JSON.parse(JSON.parse(p)));
+    //                     setInvoiceFromMerchant(JSON.parse(JSON.parse(p)));
+    //                     console.log("List feed back : ", invoiceFromMerchant);
+    //                     // }
+    //                 })
+    //         })
+    //         .catch((err) => {
+    //             console.error(err.response.data)
+    //         })
+    // }
+    // console.log("List feed back ben ngoai : ", invoiceFromMerchant);
+
+    const VerifyInvoice = (verifyList, PI, MBI) => {
+        console.log(verifyList);
+        setPaymentInfo(PI);
+        console.log("PI", PI);
+        setMerchantBankingInfo(MBI);
+        console.log("MBI", MBI);
+        setVerifyVisibility(true)
+        setVerifyList(verifyList);
     }
+
+    const cleanCart = () => {
+        ClearCart()
+        reset()
+        hideModal()
+    }
+
+
+
     return (
-        <Modal
-            className="checkout"
-            title="Your Order"
-            visible={visible}
-            onOk={() => {
-                ClearCart()
-                reset()
-                hideModal()
-                // window.location.reload()
-                processCheckout();
-                console.log("Thong tin thanh tooan", list);
-            }}
-            okText="PURCHASE"
-            onCancel={hideModal}
-            closable={false}
-            width={550}
-        >
-            <CheckoutList list={list} />
-        </Modal>
+        <>
+            <Modal
+                className="checkout"
+                title="Your Order"
+                maskClosable={false}
+                visible={visible}
+                onOk={() => {
+                    console.log("Link api ", process.env.REACT_APP_DEFAULT_LINK)
+                    let paymentInfo = {
+                        invoice: JSON.stringify(list),
+                        orderInfo: totalMoney()
+                    }
+
+                    // processCheckout(paymentInfo);
+
+
+                    ClientSendMerchantPaymentInfo(paymentInfo)
+                        .then((response) => {
+                            // const {
+                            //     invoice,
+                            //     pi,
+                            //     MBI
+                            // } = response.data;
+                            // invoice = JSON.stringify(invoice)
+                            console.warn("Invoice : ", response.data.invoice, "Payment Info : ", response.data.pi, "Merchant banking info : ", response.data.merchantBankingInfo);
+                            DecryptData("merchant", response.data.invoice, true)
+                                .then((p) => {
+                                    VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.pi, response.data.merchantBankingInfo);
+                                    // if(p != undefined) {
+                                    // console.log(JSON.parse(JSON.parse(p)));
+                                    // setInvoiceFromMerchant(JSON.parse(JSON.parse(p)));
+                                    // console.log("List feed back : ", invoiceFromMerchant);
+                                    // }
+                                })
+                        })
+                        .catch((err) => {
+                            console.error(err.response.data)
+                        })
+
+
+
+
+                    // cleanCart();
+                    hideModal();
+                    console.log("Thong tin thanh tooan", list);
+                }}
+                okText="PURCHASE"
+                onCancel={hideModal}
+                closable={false}
+                width={550}
+            >
+                <CheckoutList list={list} />
+            </Modal>
+
+            <VerifyModal
+                visible={verifyVisibility}
+                hideModal={() => setVerifyVisibility(false)}
+                list={verifyList}
+                reset={reset}
+                paymentInfo = {paymentInfo}
+                merchantBankingInfo = {merchantBankingInfo}
+            />
+        </>
     )
 }
 
@@ -42,7 +138,7 @@ const CheckoutList = ({ list }) => {
 
     return (
         <Card bordered={false}>
-            
+
             <Divider orientation="left" orientationMargin={0}>Order Bill</Divider>
             <div style={{ display: "flex", gap: 50, padding: "0", fontSize: 16 }}>
                 <Text type="default">Total Product</Text>
