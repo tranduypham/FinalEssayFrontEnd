@@ -1,9 +1,32 @@
 import axios from "axios"
-import { CLIENT_REQUEST_SECURE_CONNECTION } from "../Link/link"
+import { CLIENT_REQUEST_SECURE_CONNECTION, CLIENT_SEND_GATE_CERT, CLIENT_SEND_GATE_CLIENT_CERT, CLIENT_VERIFY_GATE_CERT } from "../Link/link"
 
-export const ClientRequestSecureLink = () => {
+export const ClientRequestSecureLink = (client_rand_string) => {
     return axios({
         url: CLIENT_REQUEST_SECURE_CONNECTION,
-        method: "GET"
+        method: "GET",
+        params: {
+            clientRand: client_rand_string
+        }
+    })
+}
+
+export const ClientSendCertToGateway = (ClientCertificate) => {
+    return axios({
+        url: CLIENT_SEND_GATE_CLIENT_CERT,
+        method: "POST",
+        params: {
+            RawCert: ClientCertificate
+        }
+    })
+}
+
+export const ClientVerifyGateCertificate = (GateCertificate) => {
+    return axios({
+        url: CLIENT_VERIFY_GATE_CERT,
+        method: "POST",
+        params: {
+            RawCert: GateCertificate
+        }
     })
 }

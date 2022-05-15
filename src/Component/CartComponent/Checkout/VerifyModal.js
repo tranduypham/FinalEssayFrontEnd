@@ -1,7 +1,8 @@
 import { Card, Modal, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection } from "../../../Actions";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate } from "../../../Actions";
+import { Client_Request_Rand_String_For_Pre_Master_Secret } from "../../../Actions/WIM/Wim_action";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
 import "./CheckoutModal.css"
@@ -35,6 +36,8 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     const [gateWayCert, setGateWayCert] = useState("");
     const [clientRand, setClientRand] = useState("");
     const [gatewayRand, setGatewayRand] = useState("");
+    const [clientCertValid, setClientCertValid] = useState(false);
+    const [gateCertValid, setGateCertValid] = useState(false);
     useEffect(async () => {
         var c_cert = await GetCertificate({ keyName: "client", rawCert: "" });
         console.log("Cert nay : ", c_cert);
@@ -48,15 +51,43 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
 
             // Tao duong ket noi an toan WTLS
 
-            // Gui yeu cau WTLS den server
-            let gateway_WTLS_response = await RequestWTLSConnection();
-            setGatewayRand(gateway_WTLS_response.rand);
-            setGatewayRand(gateway_WTLS_response.cert);
-            
-            // Roi moi gui payment request
-            // Neu den dc day thi 4 cai thong tin tren da ok roi
+            // Client tao mot chuoi ngau nhien
+            let client_rand_string = await Client_Request_Rand_String_For_Pre_Master_Secret();
+            if (client_rand_string != null) {
+                setClientRand(client_rand_string);
+
+                // Gui yeu cau WTLS den server
+                let gateway_WTLS_response = await RequestWTLSConnection(client_rand_string);
+                console.error("WTLS", gateway_WTLS_response);
+                setGatewayRand(gateway_WTLS_response.gatewayRand);
+                setGateWayCert(gateway_WTLS_response.cert);
+                // Client gui chung thu cua no cho Gateway
+                let clientCertTemp = clientCert.rawCertDataBase64;
+                if (clientCertTemp != null && clientCertTemp.length > 0) {
+                    let client_send_cert_to_gate_response = await SendClientCertificate(clientCertTemp)
+                    setClientCertValid(client_send_cert_to_gate_response);
+                    
+                    // Buoc xac thuc gate certificate se nam o useEffect duoi
+                }
+            }
         }
     }, [visible, hideModal, list, signature, clientBankInfo])
+
+    useEffect(async () => {
+        if (clientCertValid == true) {
+            let gateCertTemp = gateWayCert.rawCertDataBase64;
+            if (gateCertTemp != null && gateCertTemp.length > 0) {
+                let client_verify_gate_cert = await VerifyGatewayCertificate(gateCertTemp)
+                setGateCertValid(client_verify_gate_cert);
+            }
+        }
+
+        if (clientCertValid && gateCertValid) {
+            console.error("Bh se den buoc tao Pre master secret");
+        }
+        // Roi moi gui payment request
+        // Neu den dc day thi 4 cai thong tin tren da ok roi
+    }, [clientCertValid, gateCertValid])
     console.group("This is for payment request from client");
     console.warn("Signature", signature);
     console.warn("paymentInfo", paymentInfoPostVerify);
@@ -64,12 +95,14 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     console.warn("client banking Info", clientBankInfo);
     console.warn("client certificate Info", clientCert);
     console.groupEnd();
-    
-    if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify){
+
+    if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
         console.group("This is for Generating WTLS Connection to Gateway from client");
         console.warn("Gateway Cert", gateWayCert);
         console.warn("Client Random String", clientRand);
         console.warn("Gateway Random String", gatewayRand);
+        console.warn("Client Certificate Validity", clientCertValid);
+        console.warn("Gateway Certificate Validity ", gateCertValid);
         console.groupEnd();
     }
 
