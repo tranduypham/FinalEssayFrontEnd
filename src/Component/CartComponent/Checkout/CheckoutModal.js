@@ -1,9 +1,11 @@
+import { LoadingOutlined } from "@ant-design/icons";
 import { Card, Divider, Modal, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
 import { ClearCart, DecryptData, GetProductName, totalMoney } from "../../../Actions";
 import { ClientSendMerchantPaymentInfo } from "../../../Axios/Fetch/action";
 import { CartContext, CartTotalPriceContext } from "../../../Context";
+import LoadingOverLay from "../../LoadingComponent/loading";
 import "./CheckoutModal.css"
 import VerifyModal from "./VerifyModal";
 
@@ -16,6 +18,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     const [verifyList, setVerifyList] = useState([]);
     const [paymentInfo, setPaymentInfo] = useState("");
     const [merchantBankingInfo, setMerchantBankingInfo] = useState("");
+    const [verifyLoading, setVerifyLoading] = useState(false);
 
 
     // const processCheckout = (paymentInfo) => {
@@ -71,6 +74,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                 maskClosable={false}
                 visible={visible}
                 onOk={() => {
+                    setVerifyLoading(true);
                     console.log("Link api ", process.env.REACT_APP_DEFAULT_LINK)
                     let paymentInfo = {
                         invoice: JSON.stringify(list),
@@ -78,35 +82,24 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                     }
 
                     // processCheckout(paymentInfo);
+                    
 
 
                     ClientSendMerchantPaymentInfo(paymentInfo)
                         .then((response) => {
-                            // const {
-                            //     invoice,
-                            //     pi,
-                            //     MBI
-                            // } = response.data;
-                            // invoice = JSON.stringify(invoice)
+
+
                             console.warn("Invoice : ", response.data.invoice, "Payment Info : ", response.data.pi, "Merchant banking info : ", response.data.merchantBankingInfo);
-                            DecryptData("merchant", response.data.invoice, true)
+                            DecryptData("client", response.data.invoice, true)
                                 .then((p) => {
                                     VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.pi, response.data.merchantBankingInfo);
-                                    // if(p != undefined) {
-                                    // console.log(JSON.parse(JSON.parse(p)));
-                                    // setInvoiceFromMerchant(JSON.parse(JSON.parse(p)));
-                                    // console.log("List feed back : ", invoiceFromMerchant);
-                                    // }
+                                    setVerifyLoading(false);
                                 })
                         })
                         .catch((err) => {
                             console.error(err.response.data)
                         })
 
-
-
-
-                    // cleanCart();
                     hideModal();
                     console.log("Thong tin thanh tooan", list);
                 }}
@@ -117,6 +110,8 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
             >
                 <CheckoutList list={list} />
             </Modal>
+
+            <LoadingOverLay visibility={verifyLoading}/>
 
             <VerifyModal
                 visible={verifyVisibility}

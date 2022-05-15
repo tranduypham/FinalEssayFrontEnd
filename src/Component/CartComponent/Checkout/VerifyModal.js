@@ -1,7 +1,7 @@
 import { Card, Modal, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature } from "../../../Actions";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection } from "../../../Actions";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
 import "./CheckoutModal.css"
@@ -11,12 +11,12 @@ const { Text } = Typography;
 
 const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBankingInfo }) => {
     const processPostVerify = async () => {
-        try{
+        try {
             let S = await Signature("client", JSON.stringify(list));
             setSignature(S)
             cleanCart()
             setPinVisible(true);
-        }catch{
+        } catch {
             hideModal()
         }
     }
@@ -31,21 +31,47 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     const [clientBankInfo, setClientBankInfo] = useState("");
     const [merchantBankInfo, setMerchantBankInfo] = useState(merchantBankingInfo);
     const [paymentInfoPostVerify, setPaymentInfo] = useState(paymentInfo);
-    useEffect(() => {
+    const [clientCert, setClientCert] = useState("");
+    const [gateWayCert, setGateWayCert] = useState("");
+    const [clientRand, setClientRand] = useState("");
+    const [gatewayRand, setGatewayRand] = useState("");
+    useEffect(async () => {
+        var c_cert = await GetCertificate({ keyName: "client", rawCert: "" });
+        console.log("Cert nay : ", c_cert);
+        setClientCert(c_cert);
+    }, []);
+    useEffect(async () => {
         setMerchantBankInfo(merchantBankingInfo)
         setPaymentInfo(paymentInfo)
-        if (signature&&clientBankInfo&&merchantBankInfo&&paymentInfoPostVerify){
+        if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
             console.error("Bh t sex gui payment request day");
 
             // Tao duong ket noi an toan WTLS
+
+            // Gui yeu cau WTLS den server
+            let gateway_WTLS_response = await RequestWTLSConnection();
+            setGatewayRand(gateway_WTLS_response.rand);
+            setGatewayRand(gateway_WTLS_response.cert);
+            
             // Roi moi gui payment request
             // Neu den dc day thi 4 cai thong tin tren da ok roi
         }
     }, [visible, hideModal, list, signature, clientBankInfo])
+    console.group("This is for payment request from client");
     console.warn("Signature", signature);
     console.warn("paymentInfo", paymentInfoPostVerify);
     console.warn("merchant banking Info", merchantBankInfo);
     console.warn("client banking Info", clientBankInfo);
+    console.warn("client certificate Info", clientCert);
+    console.groupEnd();
+    
+    if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify){
+        console.group("This is for Generating WTLS Connection to Gateway from client");
+        console.warn("Gateway Cert", gateWayCert);
+        console.warn("Client Random String", clientRand);
+        console.warn("Gateway Random String", gatewayRand);
+        console.groupEnd();
+    }
 
     const [pinVisible, setPinVisible] = useState(false);
 

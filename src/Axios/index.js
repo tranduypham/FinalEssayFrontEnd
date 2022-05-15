@@ -1,3 +1,5 @@
 export * from "./Link/link"
 export * from "./Fetch/action"
 export * from "./EncryptAction/action"
+export * from "./Certificate/action"
+export * from "./WTLS/secure_link"
