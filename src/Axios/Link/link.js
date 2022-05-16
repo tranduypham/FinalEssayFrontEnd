@@ -13,6 +13,9 @@ export const VERIFY_CERT = `${DEFAULT_LINK}/Certificate/Verify`
 
 // WIM
 export const REQUEST_RAND_STRING = `${DEFAULT_LINK}/Wim/Gen_Random_Num`
+export const REQUEST_PRE_MASTER_SECRET = `${DEFAULT_LINK}/Wim/Pre_Master_secret`
+export const REQUEST_MASTER_SECRET = `${DEFAULT_LINK}/Wim/Master_secret`
+export const REQUEST_SESSION_KEYS = `${DEFAULT_LINK}/Wim/Session_Key`
 
 
 // WTLS

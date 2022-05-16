@@ -1,7 +1,7 @@
 import { Card, Modal, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate } from "../../../Actions";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string } from "../../../Actions";
 import { Client_Request_Rand_String_For_Pre_Master_Secret } from "../../../Actions/WIM/Wim_action";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
@@ -66,13 +66,16 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                 if (clientCertTemp != null && clientCertTemp.length > 0) {
                     let client_send_cert_to_gate_response = await SendClientCertificate(clientCertTemp)
                     setClientCertValid(client_send_cert_to_gate_response);
-                    
+
                     // Buoc xac thuc gate certificate se nam o useEffect duoi
                 }
             }
         }
     }, [visible, hideModal, list, signature, clientBankInfo])
 
+    const [preMaster, setPreMaster] = useState("");
+    const [master, setMaster] = useState("");
+    const [sessionKeys, setSessionKeys] = useState(null);
     useEffect(async () => {
         if (clientCertValid == true) {
             let gateCertTemp = gateWayCert.rawCertDataBase64;
@@ -81,13 +84,37 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                 setGateCertValid(client_verify_gate_cert);
             }
         }
-
         if (clientCertValid && gateCertValid) {
             console.error("Bh se den buoc tao Pre master secret");
+            if (preMaster.length === 0) {
+                let Pre_Master_Sc = await Client_Request_Pre_Master_Secret_From_WIM();
+                setPreMaster(Pre_Master_Sc);
+            }
+
         }
         // Roi moi gui payment request
         // Neu den dc day thi 4 cai thong tin tren da ok roi
     }, [clientCertValid, gateCertValid])
+
+    useEffect(async () => {
+        if (clientCertValid && gateCertValid) {
+            if (preMaster.length > 0 && master.length === 0) {
+                console.error("Tien hanh tao master secret")
+                let Master_Sc = await Client_Request_Master_Secret_using_Pre_Master_And_Rand_string(preMaster, clientRand, gatewayRand);
+                setMaster(Master_Sc);
+            }
+            if (preMaster.length > 0 && master.length > 0 && sessionKeys === null) {
+                console.error("Tien hanh tao session key")
+                console.error(master)
+                let Session_Keys = await Client_Request_Session_Keys_using_Master_And_Rand_string(master, clientRand, gatewayRand);
+                setSessionKeys(Session_Keys);
+            }
+            if (preMaster.length > 0 && master.length > 0 && sessionKeys !== null) {
+                console.error("Tao Khoa thanh cong");
+            } 
+
+        }
+    }, [preMaster, master, sessionKeys])
     console.group("This is for payment request from client");
     console.warn("Signature", signature);
     console.warn("paymentInfo", paymentInfoPostVerify);
@@ -103,6 +130,12 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         console.warn("Gateway Random String", gatewayRand);
         console.warn("Client Certificate Validity", clientCertValid);
         console.warn("Gateway Certificate Validity ", gateCertValid);
+        console.groupEnd();
+
+        console.group("Gennerate key for secure session");
+        console.warn("Premaster secret", preMaster);
+        console.warn("Master secret", master);
+        console.warn("Session Key", sessionKeys);
         console.groupEnd();
     }
 
