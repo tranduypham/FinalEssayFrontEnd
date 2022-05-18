@@ -1,4 +1,5 @@
-import { ClientRequestSecureLink, ClientSendCertToGateway, ClientVerifyGateCertificate } from "../../Axios"
+import { notification } from "antd";
+import { ClientRequestSecureLink, ClientSendCertToGateway, ClientSendEndHandShakeMess, ClientVerifyGateCertificate } from "../../Axios"
 
 export const RequestWTLSConnection = async (client_rand_string) => {
     return await ClientRequestSecureLink(client_rand_string)
@@ -26,6 +27,20 @@ export const VerifyGatewayCertificate = async (gate_cert) => {
                     return response.data
                 }).catch((err) => {
                     console.error(err);
+                    return null;
+                });
+}
+
+export const SendEndHandShake = async (cipherMess, plaintMess, SessionID) => {
+    return await ClientSendEndHandShakeMess(cipherMess, plaintMess, SessionID)
+                .then((response) => {
+                    return response.data
+                }).catch((err) => {
+                    console.error(err.response.data);
+                    notification.error({
+                        message: "Bank connection state",
+                        description: `${err.response.data.mess}`,
+                    })
                     return null;
                 });
 }

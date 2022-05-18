@@ -1,8 +1,9 @@
-import { Card, Modal, Typography } from "antd";
+import { BankOutlined } from "@ant-design/icons";
+import { Card, Modal, notification, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string } from "../../../Actions";
-import { Client_Request_Rand_String_For_Pre_Master_Secret } from "../../../Actions/WIM/Wim_action";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string, Client_Make_WIM_Do_Sym_Encryption, SendEndHandShake, Client_Make_WIM_Do_Sym_Decryption, Client_Request_Rand_String_For_Pre_Master_Secret } from "../../../Actions";
+// import {  } from "../../../Actions/WIM/Wim_action";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
 import "./CheckoutModal.css"
@@ -40,7 +41,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     const [gateCertValid, setGateCertValid] = useState(false);
     useEffect(async () => {
         var c_cert = await GetCertificate({ keyName: "client", rawCert: "" });
-        console.log("Cert nay : ", c_cert);
+        // console.log("Cert nay : ", c_cert);
         setClientCert(c_cert);
     }, []);
     useEffect(async () => {
@@ -96,6 +97,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         // Neu den dc day thi 4 cai thong tin tren da ok roi
     }, [clientCertValid, gateCertValid])
 
+    const [secureWTLSConnection, setSecureWTLSConnection] = useState(false);
     useEffect(async () => {
         if (clientCertValid && gateCertValid) {
             if (preMaster.length > 0 && master.length === 0) {
@@ -110,11 +112,42 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                 setSessionKeys(Session_Keys);
             }
             if (preMaster.length > 0 && master.length > 0 && sessionKeys !== null) {
-                console.error("Tao Khoa thanh cong");
+                try{
+                    console.error("Tao Khoa thanh cong");
+                    let endMess = "CLIENT_HANDSHAKE_END";
+                    let endHandShake = "CREATE_KEYS_SUCCESSFULY_SECURE_LINK_HAS_BEEN_ESTABLISHED";
+                    let Enc_endHandShake = await Client_Make_WIM_Do_Sym_Encryption(endHandShake, sessionKeys.clientWriteKey64, sessionKeys.clientWriteMacKey64);
+                    // console.log("Tin nhan ket thuc : ", Enc_endHandShake);
+                    let result = await SendEndHandShake(Enc_endHandShake, endMess, sessionKeys.sessionID);
+                    let encSerMess = result.enc_Mess;
+                    let serMess = await Client_Make_WIM_Do_Sym_Decryption(encSerMess, sessionKeys.serverWriteKey64, sessionKeys.serverWriteMacKey64);
+                    // console.log(serMess);
+                    if(serMess === "CREATE_KEYS_SUCCESSFULY_SECURE_LINK_HAS_BEEN_ESTABLISHED"){
+                        setSecureWTLSConnection(true);
+                    }
+                    else{
+                        throw Error("Loi tao link WTLS");
+                        
+                    }
+                }catch{
+                    notification.error({
+                        message: "Bank connection state",
+                        description: `Secure connection can not be established, Try again later`,
+                    })
+                }
             } 
 
+            if(secureWTLSConnection){
+                notification.success({
+                    message: "Welcome back",
+                    description: `Secure connection to your bank has be established successfully. Have a good shopping day`,
+                    icon:  <BankOutlined />,
+                    duration: 5
+                })
+                console.error("Se gui payment request tai day");
+            }
         }
-    }, [preMaster, master, sessionKeys])
+    }, [preMaster, master, sessionKeys, secureWTLSConnection])
     console.group("This is for payment request from client");
     console.warn("Signature", signature);
     console.warn("paymentInfo", paymentInfoPostVerify);

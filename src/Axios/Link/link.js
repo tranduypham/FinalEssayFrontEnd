@@ -16,9 +16,12 @@ export const REQUEST_RAND_STRING = `${DEFAULT_LINK}/Wim/Gen_Random_Num`
 export const REQUEST_PRE_MASTER_SECRET = `${DEFAULT_LINK}/Wim/Pre_Master_secret`
 export const REQUEST_MASTER_SECRET = `${DEFAULT_LINK}/Wim/Master_secret`
 export const REQUEST_SESSION_KEYS = `${DEFAULT_LINK}/Wim/Session_Key`
+export const SYM_CREATE_ENCRYPT_MESS = `${DEFAULT_LINK}/Wim/SymEncrypt`
+export const SYM_DECRYPT_CIPHER_MESS = `${DEFAULT_LINK}/Wim/SymDecrypt`
 
 
 // WTLS
 export const CLIENT_REQUEST_SECURE_CONNECTION = `${DEFAULT_LINK}/Gateway/RequestWTLS`
 export const CLIENT_SEND_GATE_CLIENT_CERT = `${DEFAULT_LINK}/Gateway/RecieveClientCert`
 export const CLIENT_VERIFY_GATE_CERT = `${DEFAULT_LINK}/Gateway/VerifyGateCert`
+export const CLIENT_END_HANDSHAKE = `${DEFAULT_LINK}/Gateway/End_Handshake_message`
