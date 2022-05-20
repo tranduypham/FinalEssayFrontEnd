@@ -20,34 +20,6 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     const [merchantBankingInfo, setMerchantBankingInfo] = useState("");
     const [verifyLoading, setVerifyLoading] = useState(false);
 
-
-    // const processCheckout = (paymentInfo) => {
-    //     console.log(paymentInfo);
-    //     ClientSendMerchantPaymentInfo(paymentInfo)
-    //         .then((response) => {
-    //             const {
-    //                 invoice,
-    //                 pi,
-    //                 merchantBankingInfo
-    //             } = response.data;
-    //             // invoice = JSON.stringify(invoice)
-    //             console.warn("Invoice : ", invoice, "Payment Info : ", pi, "Merchant banking info : ", merchantBankingInfo);
-    //             DecryptData("merchant", invoice, true)
-    //                 .then((p) => {
-    //                     VerifyInvoice(JSON.parse(JSON.parse(p)));
-    //                     // if(p != undefined) {
-    //                     // console.log(JSON.parse(JSON.parse(p)));
-    //                     setInvoiceFromMerchant(JSON.parse(JSON.parse(p)));
-    //                     console.log("List feed back : ", invoiceFromMerchant);
-    //                     // }
-    //                 })
-    //         })
-    //         .catch((err) => {
-    //             console.error(err.response.data)
-    //         })
-    // }
-    // console.log("List feed back ben ngoai : ", invoiceFromMerchant);
-
     const VerifyInvoice = (verifyList, PI, MBI) => {
         console.log(verifyList);
         setPaymentInfo(PI);

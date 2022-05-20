@@ -2,7 +2,8 @@ import { BankOutlined } from "@ant-design/icons";
 import { Card, Modal, notification, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string, Client_Make_WIM_Do_Sym_Encryption, SendEndHandShake, Client_Make_WIM_Do_Sym_Decryption, Client_Request_Rand_String_For_Pre_Master_Secret } from "../../../Actions";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string, Client_Make_WIM_Do_Sym_Encryption, SendEndHandShake, Client_Make_WIM_Do_Sym_Decryption, Client_Request_Rand_String_For_Pre_Master_Secret, Communicate_through_enc_connection_mess, VerifyCertificate } from "../../../Actions";
+import { DecryptBankInformation } from "../../../Axios";
 // import {  } from "../../../Actions/WIM/Wim_action";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
@@ -14,6 +15,8 @@ const { Text } = Typography;
 const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBankingInfo }) => {
     const processPostVerify = async () => {
         try {
+            let verify_merchant = await VerifyCertificate({rawCert: merchantCert.rawCertDataBase64})
+            setMerchantCertValid(verify_merchant);
             let S = await Signature("client", JSON.stringify(list));
             setSignature(S)
             cleanCart()
@@ -34,15 +37,19 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     const [merchantBankInfo, setMerchantBankInfo] = useState(merchantBankingInfo);
     const [paymentInfoPostVerify, setPaymentInfo] = useState(paymentInfo);
     const [clientCert, setClientCert] = useState("");
+    const [merchantCert, setMerchantCert] = useState("");
     const [gateWayCert, setGateWayCert] = useState("");
     const [clientRand, setClientRand] = useState("");
     const [gatewayRand, setGatewayRand] = useState("");
     const [clientCertValid, setClientCertValid] = useState(false);
+    const [merchantCertValid, setMerchantCertValid] = useState(false);
     const [gateCertValid, setGateCertValid] = useState(false);
     useEffect(async () => {
         var c_cert = await GetCertificate({ keyName: "client", rawCert: "" });
+        var m_cert = await GetCertificate({ keyName: "merchant", rawCert: "" });
         // console.log("Cert nay : ", c_cert);
         setClientCert(c_cert);
+        setMerchantCert(m_cert);
     }, []);
     useEffect(async () => {
         setMerchantBankInfo(merchantBankingInfo)
@@ -112,7 +119,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                 setSessionKeys(Session_Keys);
             }
             if (preMaster.length > 0 && master.length > 0 && sessionKeys !== null) {
-                try{
+                try {
                     console.error("Tao Khoa thanh cong");
                     let endMess = "CLIENT_HANDSHAKE_END";
                     let endHandShake = "CREATE_KEYS_SUCCESSFULY_SECURE_LINK_HAS_BEEN_ESTABLISHED";
@@ -122,29 +129,71 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                     let encSerMess = result.enc_Mess;
                     let serMess = await Client_Make_WIM_Do_Sym_Decryption(encSerMess, sessionKeys.serverWriteKey64, sessionKeys.serverWriteMacKey64);
                     // console.log(serMess);
-                    if(serMess === "CREATE_KEYS_SUCCESSFULY_SECURE_LINK_HAS_BEEN_ESTABLISHED"){
+                    if (serMess === "CREATE_KEYS_SUCCESSFULY_SECURE_LINK_HAS_BEEN_ESTABLISHED") {
                         setSecureWTLSConnection(true);
                     }
-                    else{
+                    else {
                         throw Error("Loi tao link WTLS");
-                        
+
                     }
-                }catch{
+                } catch {
                     notification.error({
                         message: "Bank connection state",
                         description: `Secure connection can not be established, Try again later`,
                     })
                 }
-            } 
+            }
 
-            if(secureWTLSConnection){
+            if (secureWTLSConnection) {
                 notification.success({
                     message: "Welcome back",
                     description: `Secure connection to your bank has be established successfully. Have a good shopping day`,
-                    icon:  <BankOutlined />,
+                    icon: <BankOutlined />,
                     duration: 5
                 })
                 console.error("Se gui payment request tai day");
+                setTimeout(async () => {
+                    // let clientMess = prompt("To Gateway: ");
+                    let serverReply = "";
+                    let paymentRequest = {
+                        PaymentInfo: paymentInfo,
+                        ClientVerify: signature,
+                        CBankInfo: clientBankInfo,
+                        MBankInfo: merchantBankInfo,
+                        MCert: merchantCert
+                    }
+                    console.log(paymentRequest);
+                    // Gửi từng phần một của payment request cho backend
+                    // Gửi payment info
+                    serverReply = await Communicate_through_enc_connection_mess(paymentInfo, sessionKeys, "PaymentInfo");
+                    console.log(serverReply);
+                    // xác nhận lại chữ ký của client xác nhận lúc trước (client ký bằng khóa Private, sang bên kia gateway sẽ kiêm tra lại bằng khóa Public của client) - có thể gửi kèm trong client Cert
+                    serverReply = await Communicate_through_enc_connection_mess(signature, sessionKeys, "ClientVerify");
+                    console.log(serverReply);
+                    // gửi thông tin ngân hàng của khách hàng
+                    serverReply = await Communicate_through_enc_connection_mess(JSON.stringify( clientBankInfo ), sessionKeys, "CBankInfo");
+                    console.log(serverReply);
+                    // giải mã thông tin ngân hàng của merchant hiện tại và gửi cho gateway
+                    let de_merchantBankInfo = await DecryptBankInformation({KeyName: "client_bank", bankInfo: merchantBankInfo}).then(res => {
+                        return res.data;
+                    }).catch(err => {
+                        return null;
+                    });
+                    serverReply = await Communicate_through_enc_connection_mess(JSON.stringify( de_merchantBankInfo ), sessionKeys, "MBankInfo");
+                    console.log(serverReply);
+                    // while (true) {
+                    //     // serverReply = await Communicate_through_enc_connection_mess(clientMess, sessionKeys);
+                    //     serverReply = await Communicate_through_enc_connection_mess(JSON.stringify(paymentRequest), sessionKeys);
+                    //     if (serverReply !== null) { alert(serverReply); } else { alert("Error while transmiting message, pls try again"); }
+                    //     break;
+                    //     // if (!/bye/.test(clientMess) && !/bye/.test(serverReply) && clientMess !== null){
+                    //     //     // clientMess = prompt("To Gateway: ");
+                    //     // }else{
+                    //     //     break;
+                    //     // }
+                    // }
+                    
+                }, 1000);
             }
         }
     }, [preMaster, master, sessionKeys, secureWTLSConnection])
@@ -154,6 +203,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     console.warn("merchant banking Info", merchantBankInfo);
     console.warn("client banking Info", clientBankInfo);
     console.warn("client certificate Info", clientCert);
+    console.warn("merchant certificate Info", merchantCert);
     console.groupEnd();
 
     if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
@@ -163,6 +213,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         console.warn("Gateway Random String", gatewayRand);
         console.warn("Client Certificate Validity", clientCertValid);
         console.warn("Gateway Certificate Validity ", gateCertValid);
+        console.warn("Merchant Certificate Validity ", merchantCertValid);
         console.groupEnd();
 
         console.group("Gennerate key for secure session");

@@ -1,5 +1,5 @@
 import axios from "axios"
-import { CLIENT_END_HANDSHAKE, CLIENT_REQUEST_SECURE_CONNECTION, CLIENT_SEND_GATE_CERT, CLIENT_SEND_GATE_CLIENT_CERT, CLIENT_VERIFY_GATE_CERT } from "../Link/link"
+import { CLIENT_END_HANDSHAKE, CLIENT_REQUEST_SECURE_CONNECTION, CLIENT_SEND_ENC_MESS, CLIENT_SEND_GATE_CERT, CLIENT_SEND_GATE_CLIENT_CERT, CLIENT_VERIFY_GATE_CERT } from "../Link/link"
 
 export const ClientRequestSecureLink = (client_rand_string) => {
     return axios({
@@ -41,6 +41,20 @@ export const ClientSendEndHandShakeMess = (cipherMess, plaintMess, SessionID) =>
         },
         headers: {
             SessionID: SessionID
+        }
+    })
+}
+
+export const ClientSendEncMess = (cipherMess, SessionID, process) => {
+    return axios({
+        url: CLIENT_SEND_ENC_MESS,
+        method: "POST",
+        params: {
+            cipherMess: cipherMess,
+        },
+        headers: {
+            SessionID: SessionID,
+            Process: process
         }
     })
 }
