@@ -12,13 +12,15 @@ import PinRequiredModal from "./PinRequiredModal";
 
 const { Text } = Typography;
 
-const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBankingInfo }) => {
+const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBankingInfo, listSignatureFromMerchant }) => {
     const processPostVerify = async () => {
         try {
             let verify_merchant = await VerifyCertificate({rawCert: merchantCert.rawCertDataBase64})
             setMerchantCertValid(verify_merchant);
-            let S = await Signature("client", JSON.stringify(list));
-            setSignature(S)
+
+            // ký số vào invoice, đoạn này sẽ diễn ra tại bước authentication customer, không phải tại đây
+            // let S = await Signature("client", JSON.stringify(list));
+            // setClientVerifytSignature(S)
             cleanCart()
             setPinVisible(true);
         } catch {
@@ -32,7 +34,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         reset()
         hideModal()
     }
-    const [signature, setSignature] = useState("");
+    const [merchant_signature, setMerchantSignature] = useState("");
     const [clientBankInfo, setClientBankInfo] = useState("");
     const [merchantBankInfo, setMerchantBankInfo] = useState(merchantBankingInfo);
     const [paymentInfoPostVerify, setPaymentInfo] = useState(paymentInfo);
@@ -52,9 +54,10 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         setMerchantCert(m_cert);
     }, []);
     useEffect(async () => {
+        setMerchantSignature(listSignatureFromMerchant);
         setMerchantBankInfo(merchantBankingInfo)
         setPaymentInfo(paymentInfo)
-        if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
+        if (merchant_signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
             console.error("Bh t sex gui payment request day");
 
             // Tao duong ket noi an toan WTLS
@@ -79,7 +82,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                 }
             }
         }
-    }, [visible, hideModal, list, signature, clientBankInfo])
+    }, [visible, hideModal, list, merchant_signature, clientBankInfo])
 
     const [preMaster, setPreMaster] = useState("");
     const [master, setMaster] = useState("");
@@ -157,7 +160,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                     let serverReply = "";
                     let paymentRequest = {
                         PaymentInfo: paymentInfo,
-                        ClientVerify: signature,
+                        ClientVerify: merchant_signature,
                         CBankInfo: clientBankInfo,
                         MBankInfo: merchantBankInfo,
                         MCert: merchantCert
@@ -168,7 +171,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
                     serverReply = await Communicate_through_enc_connection_mess(paymentInfo, sessionKeys, "PaymentInfo");
                     console.log(serverReply);
                     // xác nhận lại chữ ký của client xác nhận lúc trước (client ký bằng khóa Private, sang bên kia gateway sẽ kiêm tra lại bằng khóa Public của client) - có thể gửi kèm trong client Cert
-                    serverReply = await Communicate_through_enc_connection_mess(signature, sessionKeys, "ClientVerify");
+                    serverReply = await Communicate_through_enc_connection_mess(merchant_signature, sessionKeys, "MerchantVerify");
                     console.log(serverReply);
                     // gửi thông tin ngân hàng của khách hàng
                     serverReply = await Communicate_through_enc_connection_mess(JSON.stringify( clientBankInfo ), sessionKeys, "CBankInfo");
@@ -198,7 +201,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         }
     }, [preMaster, master, sessionKeys, secureWTLSConnection])
     console.group("This is for payment request from client");
-    console.warn("Signature", signature);
+    console.warn("Signature from merchant", merchant_signature);
     console.warn("paymentInfo", paymentInfoPostVerify);
     console.warn("merchant banking Info", merchantBankInfo);
     console.warn("client banking Info", clientBankInfo);
@@ -206,7 +209,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     console.warn("merchant certificate Info", merchantCert);
     console.groupEnd();
 
-    if (signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
+    if (merchant_signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
         console.group("This is for Generating WTLS Connection to Gateway from client");
         console.warn("Gateway Cert", gateWayCert);
         console.warn("Client Random String", clientRand);

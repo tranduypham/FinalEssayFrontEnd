@@ -1,8 +1,7 @@
-import { LoadingOutlined } from "@ant-design/icons";
-import { Card, Divider, Modal, Typography } from "antd";
+import { Card, Divider, Modal, notification, Typography } from "antd";
 
-import { useContext, useEffect, useState } from "react";
-import { ClearCart, DecryptData, GetProductName, totalMoney } from "../../../Actions";
+import { useContext, useState } from "react";
+import { ClearCart, DecryptData, GetProductName, Signature, totalMoney, VerifySignature } from "../../../Actions";
 import { ClientSendMerchantPaymentInfo } from "../../../Axios/Fetch/action";
 import { CartContext, CartTotalPriceContext } from "../../../Context";
 import LoadingOverLay from "../../LoadingComponent/loading";
@@ -16,25 +15,27 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     // const [invoiceFromMerchant, setInvoiceFromMerchant] = useState(null);
     const [verifyVisibility, setVerifyVisibility] = useState(false);
     const [verifyList, setVerifyList] = useState([]);
+    const [verifyListSignature, setVerifyListSignature] = useState("");
     const [paymentInfo, setPaymentInfo] = useState("");
     const [merchantBankingInfo, setMerchantBankingInfo] = useState("");
     const [verifyLoading, setVerifyLoading] = useState(false);
 
-    const VerifyInvoice = (verifyList, PI, MBI) => {
+    const VerifyInvoice = async (verifyList, PI, MBI, PI_sign) => {
         console.log(verifyList);
         setPaymentInfo(PI);
         console.log("PI", PI);
         setMerchantBankingInfo(MBI);
         console.log("MBI", MBI);
-        setVerifyVisibility(true)
         setVerifyList(verifyList);
+        setVerifyListSignature(PI_sign);
+        setVerifyVisibility(true);
     }
 
-    const cleanCart = () => {
-        ClearCart()
-        reset()
-        hideModal()
-    }
+    // const cleanCart = () => {
+    //     ClearCart()
+    //     reset()
+    //     hideModal()
+    // }
 
 
 
@@ -49,24 +50,38 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                     setVerifyLoading(true);
                     console.log("Link api ", process.env.REACT_APP_DEFAULT_LINK)
                     let paymentInfo = {
-                        invoice: JSON.stringify(list),
+                        invoice: `${JSON.stringify(list)}`,
                         orderInfo: totalMoney()
                     }
 
                     // processCheckout(paymentInfo);
-                    
 
+                    
 
                     ClientSendMerchantPaymentInfo(paymentInfo)
                         .then((response) => {
 
 
-                            console.warn("Invoice : ", response.data.invoice, "Payment Info : ", response.data.pi, "Merchant banking info : ", response.data.merchantBankingInfo);
+                            console.warn("Invoice : ", response.data.invoice, "Invoice signature by merchant : ", response.data.merchant_Sign_Invoice, "Payment Info : ", response.data.pi, "Merchant banking info : ", response.data.merchantBankingInfo);
                             DecryptData("client", response.data.invoice, true)
-                                .then((p) => {
-                                    VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.pi, response.data.merchantBankingInfo);
-                                    setVerifyLoading(false);
+                            .then(async (p) => {
+                                console.log("Danh sach dang JSON", JSON.parse(p));
+                                let verify_merchant_signature = await VerifySignature("merchant", JSON.parse(p), response.data.merchant_Sign_Invoice).then(res => {
+                                    console.log("Ket qua : ", res.data);
+                                    return res.data;
+                                }).catch(err => {
+                                    return false;
                                 })
+                                if(verify_merchant_signature === true){
+                                    VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.pi, response.data.merchantBankingInfo, response.data.merchant_Sign_Invoice);
+                                }else {
+                                    notification.error({
+                                        message: "Merchant authentication failure",
+                                        description: "There are some problem in your connection to server, it might secure enough. Please check and try again later."
+                                    })
+                                }
+                                setVerifyLoading(false);
+                            })
                         })
                         .catch((err) => {
                             console.error(err.response.data)
@@ -89,6 +104,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                 visible={verifyVisibility}
                 hideModal={() => setVerifyVisibility(false)}
                 list={verifyList}
+                listSignatureFromMerchant={verifyListSignature}
                 reset={reset}
                 paymentInfo = {paymentInfo}
                 merchantBankingInfo = {merchantBankingInfo}
