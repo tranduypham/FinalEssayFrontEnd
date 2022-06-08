@@ -1,6 +1,7 @@
 export const DEFAULT_LINK = process.env.REACT_APP_DEFAULT_LINK;
 export const CLIENT_SEND_MERCHANT_INVOICE = `${DEFAULT_LINK}/Merchant/SendInvoice`;
 export const DECRYPT_BANKING_INFO = `${DEFAULT_LINK}/Merchant/Try_Decrypt_Banking_Info`;
+export const DECRYPT_TOOLONG_INFO = `${DEFAULT_LINK}/Merchant/Try_Decrypt_Too_Long_Info`;
 
 // Encryption
 export const ENCRYPT_DATA = `${DEFAULT_LINK}/Encryption/Encrypt`
@@ -28,3 +29,6 @@ export const CLIENT_SEND_GATE_CLIENT_CERT = `${DEFAULT_LINK}/Gateway/RecieveClie
 export const CLIENT_VERIFY_GATE_CERT = `${DEFAULT_LINK}/Gateway/VerifyGateCert`
 export const CLIENT_END_HANDSHAKE = `${DEFAULT_LINK}/Gateway/End_Handshake_message`
 export const CLIENT_SEND_ENC_MESS = `${DEFAULT_LINK}/Gateway/Secure_Link_Communicatioin`
+export const CLIENT_VERIFY = `${DEFAULT_LINK}/Gateway/Verify_client`
+export const BANK_VERIFY_CLIENT_SIGNATURE = `${DEFAULT_LINK}/Gateway/Verify_client_signature`
+export const BANK_STATEMENT = `${DEFAULT_LINK}/ClientBank/account_state`

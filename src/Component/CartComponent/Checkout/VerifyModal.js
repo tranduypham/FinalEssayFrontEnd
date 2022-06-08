@@ -2,20 +2,23 @@ import { BankOutlined } from "@ant-design/icons";
 import { Card, Modal, notification, Typography } from "antd";
 
 import { useContext, useEffect, useState } from "react";
-import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string, Client_Make_WIM_Do_Sym_Encryption, SendEndHandShake, Client_Make_WIM_Do_Sym_Decryption, Client_Request_Rand_String_For_Pre_Master_Secret, Communicate_through_enc_connection_mess, VerifyCertificate } from "../../../Actions";
-import { DecryptBankInformation } from "../../../Axios";
+import { ClearCart, GetProductName, Signature, GetCertificate, RequestWTLSConnection, SendClientCertificate, VerifyGatewayCertificate, Client_Request_Pre_Master_Secret_From_WIM, Client_Request_Master_Secret_using_Pre_Master_And_Rand_string, Client_Request_Session_Keys_using_Master_And_Rand_string, Client_Make_WIM_Do_Sym_Encryption, SendEndHandShake, Client_Make_WIM_Do_Sym_Decryption, Client_Request_Rand_String_For_Pre_Master_Secret, Communicate_through_enc_connection_mess, VerifyCertificate, ClientAuthentication, BankStatementAction } from "../../../Actions";
+import { DecryptBankInformation, DecryptPaymentInfoSignatureInformation } from "../../../Axios";
 // import {  } from "../../../Actions/WIM/Wim_action";
 
 import { CartContext, CartTotalPriceContext, CBIProvider } from "../../../Context";
+import LoadingOverLay from "../../LoadingComponent/loading";
+import BankAccountNumberModal from "./BankAccountNumberModal";
+import BankrequireClientVerifyOrder from "./BankrequireClientVerifyOrder";
 import "./CheckoutModal.css"
 import PinRequiredModal from "./PinRequiredModal";
 
 const { Text } = Typography;
 
-const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBankingInfo, listSignatureFromMerchant }) => {
+const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, invoice, merchantBankingInfo, listSignatureFromMerchant, paymentInfoSignatureFromMerchant }) => {
     const processPostVerify = async () => {
         try {
-            let verify_merchant = await VerifyCertificate({rawCert: merchantCert.rawCertDataBase64})
+            let verify_merchant = await VerifyCertificate({ rawCert: merchantCert.rawCertDataBase64 })
             setMerchantCertValid(verify_merchant);
 
             // ký số vào invoice, đoạn này sẽ diễn ra tại bước authentication customer, không phải tại đây
@@ -35,9 +38,11 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
         hideModal()
     }
     const [merchant_signature, setMerchantSignature] = useState("");
+    const [merchant_signature_on_paymentInfo, setMerchantSignaturePaymentInfo] = useState("");
     const [clientBankInfo, setClientBankInfo] = useState("");
     const [merchantBankInfo, setMerchantBankInfo] = useState(merchantBankingInfo);
     const [paymentInfoPostVerify, setPaymentInfo] = useState(paymentInfo);
+    const [invoiceFromMerchant, setInvoice] = useState(invoice);
     const [clientCert, setClientCert] = useState("");
     const [merchantCert, setMerchantCert] = useState("");
     const [gateWayCert, setGateWayCert] = useState("");
@@ -55,9 +60,11 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     }, []);
     useEffect(async () => {
         setMerchantSignature(listSignatureFromMerchant);
+        setMerchantSignaturePaymentInfo(paymentInfoSignatureFromMerchant);
         setMerchantBankInfo(merchantBankingInfo)
         setPaymentInfo(paymentInfo)
-        if (merchant_signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify) {
+        setInvoice(invoice);
+        if (merchant_signature && clientBankInfo && merchantBankInfo && paymentInfoPostVerify && merchant_signature_on_paymentInfo) {
             console.error("Bh t sex gui payment request day");
 
             // Tao duong ket noi an toan WTLS
@@ -108,6 +115,12 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     }, [clientCertValid, gateCertValid])
 
     const [secureWTLSConnection, setSecureWTLSConnection] = useState(false);
+    const [clientAuthentResult, setClientAuthentResult] = useState(false);
+
+    const [bankVerifyVisible, setBankVerifyVisible] = useState(false);
+    const [bankVeriifyOrderToClient, setBankVeriifyOrderToClient] = useState(null);
+    const [loadingVisible, setLoadingVisible] = useState(false);
+    const [loadingContent, setLoadingContent] = useState("");
     useEffect(async () => {
         if (clientCertValid && gateCertValid) {
             if (preMaster.length > 0 && master.length === 0) {
@@ -148,61 +161,95 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
             }
 
             if (secureWTLSConnection) {
-                notification.success({
-                    message: "Welcome back",
-                    description: `Secure connection to your bank has be established successfully. Have a good shopping day`,
-                    icon: <BankOutlined />,
-                    duration: 5
-                })
-                console.error("Se gui payment request tai day");
-                setTimeout(async () => {
-                    // let clientMess = prompt("To Gateway: ");
-                    let serverReply = "";
-                    let paymentRequest = {
-                        PaymentInfo: paymentInfo,
-                        ClientVerify: merchant_signature,
-                        CBankInfo: clientBankInfo,
-                        MBankInfo: merchantBankInfo,
-                        MCert: merchantCert
-                    }
-                    console.log(paymentRequest);
-                    // Gửi từng phần một của payment request cho backend
-                    // Gửi payment info
-                    serverReply = await Communicate_through_enc_connection_mess(paymentInfo, sessionKeys, "PaymentInfo");
-                    console.log(serverReply);
-                    // xác nhận lại chữ ký của client xác nhận lúc trước (client ký bằng khóa Private, sang bên kia gateway sẽ kiêm tra lại bằng khóa Public của client) - có thể gửi kèm trong client Cert
-                    serverReply = await Communicate_through_enc_connection_mess(merchant_signature, sessionKeys, "MerchantVerify");
-                    console.log(serverReply);
-                    // gửi thông tin ngân hàng của khách hàng
-                    serverReply = await Communicate_through_enc_connection_mess(JSON.stringify( clientBankInfo ), sessionKeys, "CBankInfo");
-                    console.log(serverReply);
-                    // giải mã thông tin ngân hàng của merchant hiện tại và gửi cho gateway
-                    let de_merchantBankInfo = await DecryptBankInformation({KeyName: "client_bank", bankInfo: merchantBankInfo}).then(res => {
-                        return res.data;
-                    }).catch(err => {
-                        return null;
-                    });
-                    serverReply = await Communicate_through_enc_connection_mess(JSON.stringify( de_merchantBankInfo ), sessionKeys, "MBankInfo");
-                    console.log(serverReply);
-                    // while (true) {
-                    //     // serverReply = await Communicate_through_enc_connection_mess(clientMess, sessionKeys);
-                    //     serverReply = await Communicate_through_enc_connection_mess(JSON.stringify(paymentRequest), sessionKeys);
-                    //     if (serverReply !== null) { alert(serverReply); } else { alert("Error while transmiting message, pls try again"); }
-                    //     break;
-                    //     // if (!/bye/.test(clientMess) && !/bye/.test(serverReply) && clientMess !== null){
-                    //     //     // clientMess = prompt("To Gateway: ");
-                    //     // }else{
-                    //     //     break;
-                    //     // }
-                    // }
-                    
-                }, 1000);
+                if (!clientAuthentResult === true) {
+                    setaccountModalVisible(true);
+                }
+                // let verify_client_result = await ClientAuthentication();
+                if (clientAuthentResult === true) {
+                    notification.success({
+                        message: "Welcome back",
+                        description: `Secure connection to your bank has be established successfully. Have a good shopping day`,
+                        icon: <BankOutlined />,
+                        duration: 5
+                    })
+                    console.error("Se gui payment request tai day");
+                    setLoadingContent(<><h2>We are verifying your order</h2><br /><h2>Please be patient</h2> <br /><h2> Order will be process as soon as the verified process completed</h2></>);
+                    setLoadingVisible(true);
+                    setTimeout(async () => {
+                        // let clientMess = prompt("To Gateway: ");
+                        let serverReply = "";
+                        let paymentRequest = {
+                            PaymentInfo: paymentInfo,
+                            ClientVerify: merchant_signature,
+                            MerchantPaymentSignature: merchant_signature_on_paymentInfo,
+                            CBankInfo: clientBankInfo,
+                            MBankInfo: merchantBankInfo,
+                            MCert: merchantCert
+                        }
+                        console.log(paymentRequest);
+                        // Gửi từng phần một của payment request cho backend
+
+                        // gửi thông tin ngân hàng của khách hàng
+                        serverReply = await Communicate_through_enc_connection_mess(JSON.stringify(clientBankInfo), sessionKeys, "CBankInfo");
+                        console.log(serverReply);
+                        // giải mã thông tin ngân hàng của merchant hiện tại và gửi cho gateway
+                        let de_merchantBankInfo = await DecryptBankInformation({ KeyName: "client_bank", bankInfo: merchantBankInfo }).then(res => {
+                            return res.data;
+                        }).catch(err => {
+                            return null;
+                        });
+                        serverReply = await Communicate_through_enc_connection_mess(JSON.stringify(de_merchantBankInfo), sessionKeys, "MBankInfo");
+                        console.log(serverReply);
+                        // Gửi payment info
+                        let order_client_need_verify = "";
+                        order_client_need_verify = await Communicate_through_enc_connection_mess(paymentInfo, sessionKeys, "PaymentInfo");
+                        // console.log(serverReply);
+                        // xác nhận lại chữ ký của client xác nhận lúc trước (client ký bằng khóa Private, sang bên kia gateway sẽ kiêm tra lại bằng khóa Public của client) - có thể gửi kèm trong client Cert
+                        let de_merchantSignaturePaymentInfo = await DecryptPaymentInfoSignatureInformation({ KeyName: "client_bank", siagnature: merchant_signature_on_paymentInfo }).then(res => {
+                            return res.data;
+                        }).catch(err => {
+                            return null;
+                        });
+                        serverReply = await Communicate_through_enc_connection_mess(de_merchantSignaturePaymentInfo, sessionKeys, "MerchantVerify");
+                        console.log(serverReply);
+
+                        console.log(order_client_need_verify);
+                        if (/true/.test(serverReply.toLowerCase())){
+                            setTimeout(()=>{
+                                setBankVeriifyOrderToClient(order_client_need_verify);
+                                setLoadingVisible(false)
+                                setBankVerifyVisible(true)
+                            }, 2000)
+                        } else {
+                            notification.error({
+                                message: "Validation fail",
+                                description: "The merchant identifier seem not valid, we can not authorize this transaction. Please contact your merchant for mor infomation."
+                            })
+                        }
+
+                        // console.log(JSON.parse(order_client_need_verify));
+                        // while (true) {
+                        //     // serverReply = await Communicate_through_enc_connection_mess(clientMess, sessionKeys);
+                        //     serverReply = await Communicate_through_enc_connection_mess(JSON.stringify(paymentRequest), sessionKeys);
+                        //     if (serverReply !== null) { alert(serverReply); } else { alert("Error while transmiting message, pls try again"); }
+                        //     break;
+                        //     // if (!/bye/.test(clientMess) && !/bye/.test(serverReply) && clientMess !== null){
+                        //     //     // clientMess = prompt("To Gateway: ");
+                        //     // }else{
+                        //     //     break;
+                        //     // }
+                        // }
+
+                    }, 2000);
+                }
             }
         }
-    }, [preMaster, master, sessionKeys, secureWTLSConnection])
+    }, [preMaster, master, sessionKeys, secureWTLSConnection, clientAuthentResult])
     console.group("This is for payment request from client");
-    console.warn("Signature from merchant", merchant_signature);
-    console.warn("paymentInfo", paymentInfoPostVerify);
+    console.warn("Signature from merchant on Invoice", merchant_signature);
+    console.warn("Signature from merchant on Payment Info", merchant_signature_on_paymentInfo);
+    console.warn("Invoive", invoiceFromMerchant);
+    console.warn("Payment Info", paymentInfoPostVerify);
     console.warn("merchant banking Info", merchantBankInfo);
     console.warn("client banking Info", clientBankInfo);
     console.warn("client certificate Info", clientCert);
@@ -227,6 +274,7 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
     }
 
     const [pinVisible, setPinVisible] = useState(false);
+    const [accountModalVisible, setaccountModalVisible] = useState(false);
 
     return (
         <CBIProvider value={[clientBankInfo, setClientBankInfo]}>
@@ -256,6 +304,26 @@ const VerifyModal = ({ visible, hideModal, list, reset, paymentInfo, merchantBan
             <PinRequiredModal
                 visible={pinVisible}
                 hidden={() => setPinVisible(false)}
+                actionAfterSubmit={null}
+            />
+            <BankAccountNumberModal
+                visible={accountModalVisible}
+                hidden={() => setaccountModalVisible(false)}
+                setClientAuthentResult={setClientAuthentResult}
+            />
+            {
+                bankVeriifyOrderToClient !== null ?
+                    <BankrequireClientVerifyOrder
+                        visible={bankVerifyVisible}
+                        hidden={() => setBankVerifyVisible(false)}
+                        verifyInfo={bankVeriifyOrderToClient}
+                    />
+                    :
+                    <></>
+            }
+            <LoadingOverLay
+                visibility={loadingVisible}
+                content={loadingContent}
             />
 
         </CBIProvider>

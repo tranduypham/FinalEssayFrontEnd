@@ -16,18 +16,22 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
     const [verifyVisibility, setVerifyVisibility] = useState(false);
     const [verifyList, setVerifyList] = useState([]);
     const [verifyListSignature, setVerifyListSignature] = useState("");
+    const [paymentInfoSignatture, setPaymentInfoSignatture] = useState("");
     const [paymentInfo, setPaymentInfo] = useState("");
+    const [invoiceeFromMerchant, setInvoice] = useState("");
     const [merchantBankingInfo, setMerchantBankingInfo] = useState("");
     const [verifyLoading, setVerifyLoading] = useState(false);
 
-    const VerifyInvoice = async (verifyList, PI, MBI, PI_sign) => {
+    const VerifyInvoice = async (verifyList, Invoice, PI, MBI, I_sign, PI_sign) => {
         console.log(verifyList);
         setPaymentInfo(PI);
+        setInvoice(Invoice);
         console.log("PI", PI);
         setMerchantBankingInfo(MBI);
         console.log("MBI", MBI);
         setVerifyList(verifyList);
-        setVerifyListSignature(PI_sign);
+        setVerifyListSignature(I_sign);
+        setPaymentInfoSignatture(PI_sign);
         setVerifyVisibility(true);
     }
 
@@ -49,7 +53,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                 onOk={() => {
                     setVerifyLoading(true);
                     console.log("Link api ", process.env.REACT_APP_DEFAULT_LINK)
-                    let paymentInfo = {
+                    let invoice = {
                         invoice: `${JSON.stringify(list)}`,
                         orderInfo: totalMoney()
                     }
@@ -58,7 +62,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
 
                     
 
-                    ClientSendMerchantPaymentInfo(paymentInfo)
+                    ClientSendMerchantPaymentInfo(invoice)
                         .then((response) => {
 
 
@@ -73,7 +77,7 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                                     return false;
                                 })
                                 if(verify_merchant_signature === true){
-                                    VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.pi, response.data.merchantBankingInfo, response.data.merchant_Sign_Invoice);
+                                    VerifyInvoice(JSON.parse(JSON.parse(p)), response.data.invoice, response.data.pi, response.data.merchantBankingInfo, response.data.merchant_Sign_Invoice, response.data.merchant_Sign_PaymentInfo);
                                 }else {
                                     notification.error({
                                         message: "Merchant authentication failure",
@@ -105,7 +109,9 @@ const CheckoutModal = ({ visible, hideModal, list, reset }) => {
                 hideModal={() => setVerifyVisibility(false)}
                 list={verifyList}
                 listSignatureFromMerchant={verifyListSignature}
+                paymentInfoSignatureFromMerchant={paymentInfoSignatture}
                 reset={reset}
+                invoice = {invoiceeFromMerchant}
                 paymentInfo = {paymentInfo}
                 merchantBankingInfo = {merchantBankingInfo}
             />

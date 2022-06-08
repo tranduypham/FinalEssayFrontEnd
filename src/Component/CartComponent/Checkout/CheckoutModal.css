@@ -20,6 +20,13 @@ table tr th {
 .verify .ant-modal-header * {
     color: #2f231d;
 }
+
+.verify.account .ant-modal-header {
+    background-color: #597881;
+}
+.verify.account .ant-modal-header * {
+    color: #fff;
+}
 .verify .ant-modal-body {
     padding: 0;
 }
@@ -27,6 +34,14 @@ table tr th {
     color: #2f231d;
     border-color: #E2A88C;
     background: #E2A88C;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
+    box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
+    transition: all 0.2s;
+}
+.verify.account .ant-btn-primary {
+    color: #fff;
+    border-color: #597881;
+    background: #597881;
     text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
     box-shadow: 0 2px 0 rgb(0 0 0 / 5%);
     transition: all 0.2s;

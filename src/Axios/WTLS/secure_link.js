@@ -1,5 +1,5 @@
 import axios from "axios"
-import { CLIENT_END_HANDSHAKE, CLIENT_REQUEST_SECURE_CONNECTION, CLIENT_SEND_ENC_MESS, CLIENT_SEND_GATE_CERT, CLIENT_SEND_GATE_CLIENT_CERT, CLIENT_VERIFY_GATE_CERT } from "../Link/link"
+import { BANK_STATEMENT, BANK_VERIFY_CLIENT_SIGNATURE, CLIENT_END_HANDSHAKE, CLIENT_REQUEST_SECURE_CONNECTION, CLIENT_SEND_ENC_MESS, CLIENT_SEND_GATE_CERT, CLIENT_SEND_GATE_CLIENT_CERT, CLIENT_VERIFY, CLIENT_VERIFY_GATE_CERT } from "../Link/link"
 
 export const ClientRequestSecureLink = (client_rand_string) => {
     return axios({
@@ -56,5 +56,33 @@ export const ClientSendEncMess = (cipherMess, SessionID, process) => {
             SessionID: SessionID,
             Process: process
         }
+    })
+}
+
+export const ClientVerify = ({bankAccount, password}) => {
+    return axios({
+        url: CLIENT_VERIFY,
+        method: "POST",
+        data: {
+            bankAccount: bankAccount,
+            password: password
+        }
+    })
+}
+
+export const BankVerifyClientSignature = (signature) => {
+    return axios({
+        url: BANK_VERIFY_CLIENT_SIGNATURE,
+        method: "POST",
+        params: {
+            signature: signature
+        }
+    })
+}
+
+export const BankStatement = () => {
+    return axios({
+        url: BANK_STATEMENT,
+        method: "POST"
     })
 }

@@ -1,0 +1,4 @@
+.loading-text>*{
+    font-weight: bolder;
+    color: var(--headerBar);
+}

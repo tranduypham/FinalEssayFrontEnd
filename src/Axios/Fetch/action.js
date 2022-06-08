@@ -1,6 +1,6 @@
 import axios from "axios"
 import {
-    CLIENT_SEND_MERCHANT_INVOICE, DECRYPT_BANKING_INFO, GET_CLIENT_BANK_INFO, PIN_VERIFYING
+    CLIENT_SEND_MERCHANT_INVOICE, DECRYPT_BANKING_INFO, DECRYPT_TOOLONG_INFO, GET_CLIENT_BANK_INFO, PIN_VERIFYING
 } from "../Link/link"
 
 export const ClientSendMerchantPaymentInfo = (pi) => {
@@ -22,14 +22,11 @@ export const VerifyClientPinCode = ({ pin }) => {
     })
 }
 
-export const GetClientBankInformation = ({ pin, bankAccount }) => {
-    console.log(pin, bankAccount);
+export const GetClientBankInformation = ({ pin }) => {
+    console.log(pin);
     return axios({
         url: GET_CLIENT_BANK_INFO,
         method: "POST",
-        params: {
-            bankAccount: bankAccount
-        },
         data: {
             pin: pin
         }
@@ -42,6 +39,16 @@ export const DecryptBankInformation = ({ bankInfo }) => {
         method: "POST",
         headers: {
             encBankInfo:  `${bankInfo}`
+        }
+    })
+}
+
+export const DecryptPaymentInfoSignatureInformation = ({ siagnature }) => {
+    return axios({
+        url: DECRYPT_TOOLONG_INFO,
+        method: "POST",
+        headers: {
+            encTooLongInfo:  `${siagnature}`
         }
     })
 }

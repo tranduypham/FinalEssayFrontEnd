@@ -1,5 +1,5 @@
 import { notification } from "antd";
-import { ClientRequestSecureLink, ClientSendCertToGateway, ClientSendEncMess, ClientSendEndHandShakeMess, ClientVerifyGateCertificate } from "../../Axios"
+import { BankStatement, BankVerifyClientSignature, ClientRequestSecureLink, ClientSendCertToGateway, ClientSendEncMess, ClientSendEndHandShakeMess, ClientVerify, ClientVerifyGateCertificate } from "../../Axios"
 import { Client_Make_WIM_Do_Sym_Decryption, Client_Make_WIM_Do_Sym_Encryption } from "../WIM/Wim_action";
 
 export const RequestWTLSConnection = async (client_rand_string) => {
@@ -42,6 +42,41 @@ export const SendEndHandShake = async (cipherMess, plaintMess, SessionID) => {
                 message: "Bank connection state",
                 description: `${err.response.data.mess}`,
             })
+            return null;
+        });
+}
+
+export const ClientAuthentication = async ({bankAccount, password}) => {
+    return await ClientVerify({bankAccount: bankAccount, password: password})
+        .then((response) => {
+            return response.data
+        }).catch((err) => {
+            console.error(err.response.data);
+            notification.error({
+                message: "Bank connection state",
+                description: `Failing while authentication client identity`,
+            })
+            return false;
+        });
+}
+
+export const BankCheckClientSignature = async (signature) => {
+    return await BankVerifyClientSignature(signature)
+        .then((response) => {
+            return response.data
+        }).catch((err) => {
+            console.error(err.response.data);
+            return false;
+        });
+}
+
+export const BankStatementAction = async () => {
+    return await BankStatement()
+        .then((response) => {
+            if (response.data === null || response.data === "null") throw Error("Error while recieve bank statement"); 
+            return response.data
+        }).catch((err) => {
+            console.error(err.response.data);
             return null;
         });
 }
