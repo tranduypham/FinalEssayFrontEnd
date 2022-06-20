@@ -1,7 +1,18 @@
 import axios from "axios"
 import {
-    CLIENT_SEND_MERCHANT_INVOICE, DECRYPT_BANKING_INFO, DECRYPT_TOOLONG_INFO, GET_CLIENT_BANK_INFO, PIN_VERIFYING
+    CLIENT_SEND_MERCHANT_INVOICE, CLIENT_VERIFIED, DECRYPT_BANKING_INFO, DECRYPT_TOOLONG_INFO, GET_CLIENT_BANK_INFO, PIN_VERIFYING
 } from "../Link/link"
+
+export const ClientVerifiedItSelf = (pin) => {
+    // console.log("link ",CLIENT_SEND_MERCHANT_INVOICE);
+    return axios({
+        url: CLIENT_VERIFIED,
+        method: "POST",
+        data: {
+            pin: pin
+        }
+    })
+}
 
 export const ClientSendMerchantPaymentInfo = (pi) => {
     // console.log("link ",CLIENT_SEND_MERCHANT_INVOICE);

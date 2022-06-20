@@ -1,10 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { totalCart, totalMoney } from './Actions';
 import './App.css';
 import { ProductList, WebLayout } from './Component';
 import { CartPriceProvider, CartProvider } from './Context';
-import { ShoppingCartPage, ProductPage } from './Page';
+import { ShoppingCartPage, ProductPage, VerifyUser } from './Page';
 
 // import { productList } from './Database';
 
@@ -22,8 +22,6 @@ function App() {
   const [cartTotal, setCartTotal] = useState(totalCart());
   const [totalPrice, setTotalPrice] = useState(totalMoney());
 
-
-
   return (
     <BrowserRouter>
 
@@ -32,8 +30,9 @@ function App() {
           <CartProvider value={[cartTotal, setCartTotal]}>
             <WebLayout totalProductInCart={cartTotal}>
               <Routes>
-                {/* <ProductList products={productList} /> */}
                 <Route path="/" element={<ProductPage />}>
+                </Route>
+                <Route path="/pin" element={<VerifyUser />}>
                 </Route>
                 <Route path="/cart" element={<ShoppingCartPage />}>
                 </Route>

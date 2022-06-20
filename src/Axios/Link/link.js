@@ -1,4 +1,5 @@
 export const DEFAULT_LINK = process.env.REACT_APP_DEFAULT_LINK;
+export const CLIENT_VERIFIED = `${DEFAULT_LINK}/Merchant/VerifyUser`;
 export const CLIENT_SEND_MERCHANT_INVOICE = `${DEFAULT_LINK}/Merchant/SendInvoice`;
 export const DECRYPT_BANKING_INFO = `${DEFAULT_LINK}/Merchant/Try_Decrypt_Banking_Info`;
 export const DECRYPT_TOOLONG_INFO = `${DEFAULT_LINK}/Merchant/Try_Decrypt_Too_Long_Info`;
